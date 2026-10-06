@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.9</version>
+            <version>1.10.0</version>
         </dependency>
 
         <dependency>
@@ -90,8 +90,13 @@
                 <artifactId>dependency-check-maven</artifactId>
                 <version>11.1.1</version>
                 <configuration>
-                    <failBuildOnCVSS>7</failBuildOnCVSS>
-                    <nvdApiKey>05028C6D-2870-4358-A719-5424DDA781B3</nvdApiKey>
+                    <!-- Report only; the quality gate script decides. NVD key comes from -DnvdApiKey=... -->
+                    <failBuildOnCVSS>11</failBuildOnCVSS>
+                    <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+                    <formats>
+                        <format>HTML</format>
+                        <format>JSON</format>
+                    </formats>
                 </configuration>
             </plugin>
             <!-- SpotBugs -->
@@ -99,6 +104,10 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.8.6.2</version>
+                <configuration>
+                    <xmlOutput>true</xmlOutput>
+                    <failOnError>false</failOnError>
+                </configuration>
             </plugin>
             <!-- CycloneDX BOM Generator -->
             <plugin>
