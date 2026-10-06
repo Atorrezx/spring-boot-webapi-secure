@@ -1,3 +1,19 @@
+Semgrep failed to set the safe.directory Git config option. Git commands might fail: Command failed with exit code: 128
+-----
+Command failed with output:
+fatal: not a git repository: /src/C:/Users/AndresTorrezVaca/OneDrive - finuplatam/Documentos/SOE/Laboratorio 3 - CI Seguro con SAST y SCA/spring-boot-webapi-secure/.git/worktrees/red-state
+
+
+Failed to run 'git config --global --add safe.directory *'. Possible reasons:
+
+- the git binary is not available
+- the current working directory is not a git repository
+- the baseline commit is not a parent of the current commit
+    (if you are running through semgrep-app, check if you are setting `SEMGREP_BRANCH` or `SEMGREP_BASELINE_COMMIT` properly)
+- the current working directory is not marked as safe
+    (fix with `git config --global --add safe.directory $(pwd)`)
+
+Try running the command yourself to debug the issue.
 METRICS: Using configs from the Registry (like --config=p/ci) reports pseudonymous rule metrics to semgrep.dev.
 To disable Registry rule metrics, use "--metrics=off".
 When using configs only from local files (like --config=xyz.yml) metrics are sent only when the user is logged in.
@@ -108,6 +124,5 @@ More information: https://semgrep.dev/docs/metrics
  • Rules run: 171
  • Targets scanned: 6
  • Parsed lines: ~100.0%
- • Scan was limited to files tracked by git
- • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+ • No ignore information available
 Ran 171 rules on 6 files: 10 findings.
