@@ -2,7 +2,7 @@ name: CI/CD - Spring Boot DevSecOps
 
 on:
   push:
-    branches: [ main, develop, feature/**, bugfix/**, hotfix/** ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
   # Optional: also trigger on version tags
@@ -12,8 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  JAVA_VERSION: '25'
+  JAVA_VERSION: '21'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}   # e.g. your-org/your-app
 
@@ -70,10 +73,35 @@ jobs:
       - uses: github/codeql-action/autobuild@v3
       - uses: github/codeql-action/analyze@v3
 
-  sca-dependency-check:
-    name: SCA - OWASP Dependency-Check
+  sast-semgrep:
+    name: SAST - Semgrep
     runs-on: ubuntu-latest
-    if: false
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep
+        run: |
+          semgrep scan \
+            --config auto \
+            --config .semgrep.yml \
+            --metrics=on \
+            --json-output=semgrep-results.json \
+            --sarif-output=semgrep-results.sarif \
+            src/main/java
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-reports
+          path: |
+            semgrep-results.json
+            semgrep-results.sarif
+          if-no-files-found: warn
+          retention-days: 14
+
+  spotbugs:
+    name: SAST - SpotBugs
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -81,14 +109,40 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: temurin
           cache: maven
-      - name: Run Dependency-Check
-        run: mvn -B org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=7 || true
+      - name: Run SpotBugs
+        run: mvn -B compile spotbugs:spotbugs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
+          name: spotbugs-report
+          path: target/spotbugsXml.xml
+          if-no-files-found: warn
           retention-days: 14
+
+  # Required status check for branch protection
+  quality-gate:
+    name: CI/CD Quality Gate
+    runs-on: ubuntu-latest
+    needs: [build-and-test, sast-semgrep, sast-codeql, spotbugs]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: reports
+      - name: Evaluate quality gate
+        env:
+          JOB_RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          status=0
+          if echo "$JOB_RESULTS" | grep -qE 'failure|cancelled'; then
+            echo "::error::A required job did not succeed ($JOB_RESULTS)"
+            status=1
+          fi
+          python3 scripts/quality_gate.py \
+            --semgrep reports/semgrep-reports/semgrep-results.json \
+            --spotbugs reports/spotbugs-report/spotbugsXml.xml || status=1
+          exit "$status"
 
   # ==================================================================
   # CD JOBS – only on main (or tags)
@@ -96,7 +150,7 @@ jobs:
   docker-build-scan-push:
     name: Docker Build → Scan → Push
     runs-on: ubuntu-latest
-    needs: [build-and-test, sast-codeql]   # wait for CI quality gates
+    needs: [quality-gate]   # wait for the quality gate
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
@@ -220,7 +274,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: deploy-staging
+    needs: [deploy-staging, docker-build-scan-push]
     if: false #github.ref == 'refs/heads/main'
     environment:
       name: production          # requires manual approval in GitHub UI

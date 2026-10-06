@@ -1,0 +1,13 @@
+WARNING: Dependency-Check report not found (not provided); marking as not run
+
+Tool              Status    Critical
+Semgrep           FAIL      7
+SpotBugs          PASS      0
+Dependency-Check  not run   0
+  [Semgrep] lab-permit-all src/main/java/bo/edu/devsecops/config/SecurityConfig.java:16
+  [Semgrep] lab-hardcoded-secret src/main/java/bo/edu/devsecops/controller/AuthController.java:18
+  [Semgrep] lab-hardcoded-secret src/main/java/bo/edu/devsecops/controller/AuthController.java:19
+  [Semgrep] lab-html-without-output-encoding src/main/java/bo/edu/devsecops/controller/CommentController.java:19
+  [Semgrep] java.spring.security.injection.tainted-html-string.tainted-html-string src/main/java/bo/edu/devsecops/controller/CommentController.java:19
+  [Semgrep] lab-java-sql-concatenation src/main/java/bo/edu/devsecops/controller/ProductController.java:24
+  [Semgrep] java.spring.security.injection.tainted-sql-string.tainted-sql-string src/main/java/bo/edu/devsecops/controller/ProductController.java:24

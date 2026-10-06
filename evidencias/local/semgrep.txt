@@ -1,0 +1,113 @@
+METRICS: Using configs from the Registry (like --config=p/ci) reports pseudonymous rule metrics to semgrep.dev.
+To disable Registry rule metrics, use "--metrics=off".
+When using configs only from local files (like --config=xyz.yml) metrics are sent only when the user is logged in.
+
+More information: https://semgrep.dev/docs/metrics
+
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 6 files tracked by git with 1080 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  java            124       6          Community    1074                                                                
+  <multilang>      47       6          Custom          6                                                                
+                                                                                                                        
+                    
+                    
+┌──────────────────┐
+│ 10 Code Findings │
+└──────────────────┘
+                                                             
+    src/main/java/bo/edu/devsecops/config/SecurityConfig.java
+    ❯❱ lab-csrf-disabled
+          ❰❰ Blocking ❱❱
+          La proteccion CSRF esta deshabilitada.
+                                                
+           15┆ .csrf(csrf -> csrf.disable())
+   
+   ❯❯❱ lab-permit-all
+          ❰❰ Blocking ❱❱
+          Todos los endpoints se encuentran accesibles sin autenticacion.
+                                                                         
+           16┆ .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                                                                 
+    src/main/java/bo/edu/devsecops/controller/AuthController.java
+   ❯❯❱ lab-hardcoded-secret
+          ❰❰ Blocking ❱❱
+          Secreto almacenado directamente en el codigo fuente.
+                                                              
+           18┆ private static final String ADMIN_PASSWORD = "Admin123!";
+            ⋮┆----------------------------------------
+           19┆ private static final String JWT_SECRET = "devsecops-lab-secret-key-123456789";
+   
+    ❯❱ lab-sensitive-data-in-log
+          ❰❰ Blocking ❱❱
+          Posible dato sensible escrito en el log.
+                                                  
+           26┆ LOGGER.info("Intento de acceso: usuario={}, password={}", username, password);
+                                                                    
+    src/main/java/bo/edu/devsecops/controller/CommentController.java
+   ❯❯❱ lab-html-without-output-encoding
+          ❰❰ Blocking ❱❱
+          Contenido controlado por el usuario se incorpora directamente en HTML.
+                                                                                
+           19┆ return ResponseEntity.ok("<html><body><h2>Vista previa</h2><p>" + comment +
+               "</p></body></html>");                                                     
+   
+   ❯❯❱ java.spring.security.injection.tainted-html-string.tainted-html-string
+          ❰❰ Blocking ❱❱
+          Detected user input flowing into a manually constructed HTML string. You may be accidentally       
+          bypassing secure methods of rendering HTML by manually constructing HTML and this could create a   
+          cross-site scripting vulnerability, which could let attackers steal sensitive user data. To be sure
+          this is safe, check that the HTML is rendered safely. You can use the OWASP ESAPI encoder if you   
+          must render user data.                                                                             
+          Details: https://sg.run/ObdR                                                                       
+                                                                                                             
+           19┆ return ResponseEntity.ok("<html><body><h2>Vista previa</h2><p>" + comment +
+               "</p></body></html>");                                                     
+                                                                    
+    src/main/java/bo/edu/devsecops/controller/ProductController.java
+   ❯❯❱ lab-java-sql-concatenation
+          ❰❰ Blocking ❱❱
+          Entrada HTTP concatenada en una consulta SQL.
+                                                       
+           24┆ String sql = "SELECT id, name, price FROM products WHERE name LIKE '%" + name + "%'";
+   
+   ❯❯❱ java.spring.security.injection.tainted-sql-string.tainted-sql-string
+          ❰❰ Blocking ❱❱
+          User data flows into this manually-constructed SQL string. User data can be safely inserted into SQL
+          strings using prepared statements or an object-relational mapper (ORM). Manually-constructed SQL    
+          strings is a possible indicator of SQL injection, which could let an attacker steal or manipulate   
+          data from the database. Instead, use prepared statements (`connection.PreparedStatement`) or a safe 
+          library.                                                                                            
+          Details: https://sg.run/9rzz                                                                        
+                                                                                                              
+           24┆ String sql = "SELECT id, name, price FROM products WHERE name LIKE '%" + name + "%'";
+   
+    ❯❱ java.spring.security.audit.spring-sqli.spring-sqli
+          ❰❰ Blocking ❱❱
+          Detected a string argument from a public method contract in a raw SQL statement. This could lead to
+          SQL injection if variables in the SQL statement are not properly sanitized. Use a prepared         
+          statements (java.sql.PreparedStatement) instead. You can obtain a PreparedStatement using          
+          'connection.prepareStatement'.                                                                     
+          Details: https://sg.run/1Z3x                                                                       
+                                                                                                             
+           25┆ return jdbcTemplate.queryForList(sql);
+
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 10 (10 blocking)
+ • Rules run: 171
+ • Targets scanned: 6
+ • Parsed lines: ~100.0%
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 171 rules on 6 files: 10 findings.
