@@ -6,7 +6,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 export MSYS_NO_PATHCONV=1
 ROOT="$(pwd -W 2>/dev/null || pwd)"
-OUT=evidencias/local
+OUT=${OUT:-evidencias/local}
 mkdir -p "$OUT"
 
 MVN_IMAGE=maven:3.9-eclipse-temurin-21
