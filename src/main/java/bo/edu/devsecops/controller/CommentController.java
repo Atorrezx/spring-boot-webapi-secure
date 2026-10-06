@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.util.HtmlUtils;
+
 import java.util.Map;
 
 @RestController
@@ -16,6 +18,8 @@ public class CommentController {
     @PostMapping(value = "/preview", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<String> preview(@RequestBody Map<String, String> body) {
         String comment = body.getOrDefault("comment", "");
-        return ResponseEntity.ok("<html><body><h2>Vista previa</h2><p>" + comment + "</p></body></html>");
+        String safeComment = HtmlUtils.htmlEscape(comment);
+        String html = String.join("", "<html><body><h2>Vista previa</h2><p>", safeComment, "</p></body></html>");
+        return ResponseEntity.ok(html);
     }
 }

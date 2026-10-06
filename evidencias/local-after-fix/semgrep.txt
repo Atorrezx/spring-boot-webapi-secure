@@ -1,0 +1,51 @@
+METRICS: Using configs from the Registry (like --config=p/ci) reports pseudonymous rule metrics to semgrep.dev.
+To disable Registry rule metrics, use "--metrics=off".
+When using configs only from local files (like --config=xyz.yml) metrics are sent only when the user is logged in.
+
+More information: https://semgrep.dev/docs/metrics
+
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 6 files tracked by git with 1080 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  java            124       6          Community    1074                                                                
+  <multilang>      47       6          Custom          6                                                                
+                                                                                                                        
+                   
+                   
+┌─────────────────┐
+│ 2 Code Findings │
+└─────────────────┘
+                                                             
+    src/main/java/bo/edu/devsecops/config/SecurityConfig.java
+    ❯❱ lab-csrf-disabled
+          ❰❰ Blocking ❱❱
+          La proteccion CSRF esta deshabilitada.
+                                                
+           16┆ .csrf(csrf -> csrf.disable())
+                                                                 
+    src/main/java/bo/edu/devsecops/controller/AuthController.java
+    ❯❱ lab-sensitive-data-in-log
+          ❰❰ Blocking ❱❱
+          Posible dato sensible escrito en el log.
+                                                  
+           35┆ LOGGER.info("Intento de acceso: usuario={}", username);
+
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 2 (2 blocking)
+ • Rules run: 171
+ • Targets scanned: 6
+ • Parsed lines: ~100.0%
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 171 rules on 6 files: 2 findings.
