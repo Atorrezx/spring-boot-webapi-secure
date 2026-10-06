@@ -1,6 +1,5 @@
-WARNING: Dependency-Check report not found (not provided); marking as not run
 
 Tool              Status    Critical
 Semgrep           PASS      0
 SpotBugs          PASS      0
-Dependency-Check  not run   0
+Dependency-Check  PASS      0
