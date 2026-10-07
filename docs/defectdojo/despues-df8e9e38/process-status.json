@@ -1,0 +1,83 @@
+[
+  {
+    "image": "maven:3.9-eclipse-temurin-21",
+    "command": [
+      "mvn",
+      "-B",
+      "-f",
+      "pom.scan.xml",
+      "package",
+      "-DskipTests"
+    ],
+    "returncode": 0
+  },
+  {
+    "image": "maven:3.9-eclipse-temurin-21",
+    "command": [
+      "mvn",
+      "-B",
+      "-f",
+      "pom.scan.xml",
+      "dependency-check:check"
+    ],
+    "returncode": 0
+  },
+  {
+    "image": "maven:3.9-eclipse-temurin-21",
+    "command": [
+      "mvn",
+      "-B",
+      "-f",
+      "pom.scan.xml",
+      "spotbugs:spotbugs"
+    ],
+    "returncode": 0
+  },
+  {
+    "image": "semgrep/semgrep:1.178.0",
+    "command": [
+      "semgrep",
+      "scan",
+      "--config",
+      "/controls/java.yml",
+      "--config",
+      "/controls/.semgrep.yml",
+      "--metrics=off",
+      "--json-output",
+      "/src/semgrep-results.json",
+      "/src/src/main/java"
+    ],
+    "returncode": 0
+  },
+  {
+    "image": "aquasec/trivy:0.70.0",
+    "command": [
+      "rootfs",
+      "--scanners",
+      "vuln",
+      "--pkg-types",
+      "library",
+      "--list-all-pkgs",
+      "--format",
+      "json",
+      "--output",
+      "trivy-report.json",
+      "--skip-db-update",
+      "--skip-java-db-update",
+      "target"
+    ],
+    "returncode": 0
+  },
+  {
+    "image": "openpolicyagent/conftest:v0.57.0",
+    "command": [
+      "test",
+      "--policy",
+      "/controls/policies/dockerfile.rego",
+      "--output",
+      "json",
+      "/src/Dockerfile"
+    ],
+    "returncode": 0
+  }
+]

@@ -1,0 +1,159 @@
+{
+  "revision": "584fd8d9b9ce6d1ac4ef6d41cfbabc0f0f7ae3dc",
+  "tree": "7f8e3ac8b36edbc1224b710f19ffcf2901742348",
+  "created_at": "2026-10-07T18:39:25.474466+00:00",
+  "scope": "rootfs scan of compiled application JAR directory; library packages only, no image or OS packages",
+  "source_pom_sha256": "b07c288e421cf6215626127e84cd64992dd399e6096d5cc2de49d6a49199d6de",
+  "images": {
+    "maven:3.9-eclipse-temurin-21": "maven@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320",
+    "semgrep/semgrep:1.178.0": "semgrep/semgrep@sha256:32e459968daabe7ab86968184a29109b9564aa00392401156f9788452b42786b",
+    "openpolicyagent/conftest:v0.57.0": "openpolicyagent/conftest@sha256:bfad49fcc2937f2c07970f31f80bc973c88fdf11fb17998376dcc9890ab49ffc",
+    "aquasec/trivy:0.70.0": "aquasec/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e"
+  },
+  "controls": {
+    "semgrep": "dd925aeb60a34d0259ff0bb3f9bdd4c3089e225338dfff533e85021531807b91",
+    "java": "5e652fa9ac09c9fac36bbadc3562a0c8eed1a47438a9d1f545e021ae3c5648b1",
+    "conftest": "50c977e6ff0da8d019c2798d869d6413590a08c2cfb8e3d511eac5a2a7315cd4"
+  },
+  "reports": {
+    "conftest-report.json": "bb19b856d73a2bdac99e721b6466a277371eab3b663dd527b9714a7d3d5af200",
+    "dependency-check-report.sarif": "ec6c86ba87c3ff1391cf73d1916493decf5a47a97e31032b440ecb0e75fe2990",
+    "semgrep-results.json": "df8f692e2f3b176b71eebae5f5b6c1bdfd4b3abc738aec95e491391612a89c3b",
+    "spotbugs-report.json": "eaa32e1e436a3d0c810868e6b77ac25c638896657e6b3b7cc6803b0a7ac084f1",
+    "trivy-report.json": "5049898f4a4e1570f314da1b39ad3987b9eaf73624184c3324032b2ce2ff8f2b"
+  },
+  "db_metadata": {
+    "trivy": [
+      {
+        "path": "/home/runner/.cache/trivy/db/metadata.json",
+        "sha256": "34150fbf3abb7aa32a5bd09318fe1bfd45a5491f2c51382b7e5f5a76a195aa90",
+        "mtime": 1791398230.8410082
+      },
+      {
+        "path": "/home/runner/.cache/trivy/java-db/metadata.json",
+        "sha256": "986a9a7de7924260ef4dbaa2f9d25261cc20b35c9d3a42dbc291847bd9688d98",
+        "mtime": 1791398254.12829
+      }
+    ],
+    "dependency_check": {
+      "engineVersion": "11.1.1",
+      "dataSource": [
+        {
+          "name": "NVD API Last Checked",
+          "timestamp": "2026-10-07T18:38:55Z"
+        },
+        {
+          "name": "NVD API Last Modified",
+          "timestamp": "2026-10-07T18:17:32Z"
+        }
+      ]
+    }
+  },
+  "process_statuses": [
+    {
+      "image": "aquasec/trivy:0.70.0",
+      "command": [
+        "image",
+        "--download-db-only"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "aquasec/trivy:0.70.0",
+      "command": [
+        "image",
+        "--download-java-db-only"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "maven:3.9-eclipse-temurin-21",
+      "command": [
+        "mvn",
+        "-B",
+        "-f",
+        "pom.scan.xml",
+        "package",
+        "-DskipTests"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "maven:3.9-eclipse-temurin-21",
+      "command": [
+        "mvn",
+        "-B",
+        "-f",
+        "pom.scan.xml",
+        "dependency-check:check"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "maven:3.9-eclipse-temurin-21",
+      "command": [
+        "mvn",
+        "-B",
+        "-f",
+        "pom.scan.xml",
+        "spotbugs:spotbugs"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "semgrep/semgrep:1.178.0",
+      "command": [
+        "semgrep",
+        "scan",
+        "--config",
+        "/controls/java.yml",
+        "--config",
+        "/controls/.semgrep.yml",
+        "--metrics=off",
+        "--json-output",
+        "/src/semgrep-results.json",
+        "/src/src/main/java"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "aquasec/trivy:0.70.0",
+      "command": [
+        "rootfs",
+        "--scanners",
+        "vuln",
+        "--pkg-types",
+        "library",
+        "--list-all-pkgs",
+        "--format",
+        "json",
+        "--output",
+        "trivy-report.json",
+        "--skip-db-update",
+        "--skip-java-db-update",
+        "target"
+      ],
+      "returncode": 0
+    },
+    {
+      "image": "openpolicyagent/conftest:v0.57.0",
+      "command": [
+        "test",
+        "--policy",
+        "/controls/policies/dockerfile.rego",
+        "--output",
+        "json",
+        "/src/Dockerfile"
+      ],
+      "returncode": 0
+    }
+  ],
+  "counts": {
+    "dependency-check": 132,
+    "spotbugs": 2,
+    "semgrep": 10,
+    "trivy-packages": 101,
+    "trivy": 104,
+    "conftest": 0
+  }
+}
