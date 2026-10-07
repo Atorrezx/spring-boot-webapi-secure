@@ -1,0 +1,27 @@
+{
+  "trivy": [
+    {
+      "path": "/home/runner/.cache/trivy/db/metadata.json",
+      "sha256": "34150fbf3abb7aa32a5bd09318fe1bfd45a5491f2c51382b7e5f5a76a195aa90",
+      "mtime": 1791398230.8410082
+    },
+    {
+      "path": "/home/runner/.cache/trivy/java-db/metadata.json",
+      "sha256": "986a9a7de7924260ef4dbaa2f9d25261cc20b35c9d3a42dbc291847bd9688d98",
+      "mtime": 1791398254.12829
+    }
+  ],
+  "dependency_check": {
+    "engineVersion": "11.1.1",
+    "dataSource": [
+      {
+        "name": "NVD API Last Checked",
+        "timestamp": "2026-10-07T18:38:55Z"
+      },
+      {
+        "name": "NVD API Last Modified",
+        "timestamp": "2026-10-07T18:17:32Z"
+      }
+    ]
+  }
+}
