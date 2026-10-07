@@ -33,12 +33,24 @@ class BaselineTest(unittest.TestCase):
             self.assertTrue(source.joinpath("src", "A.java").exists())
             self.assertIn("11.1.1", result); self.assertIn("4.8.6.2", result)
             self.assertIn("<format>XML</format>", result)
+            self.assertIn("<ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>", result)
+            self.assertEqual(2, result.count("<failOnError>true</failOnError>"))
 
     @mock.patch("security_baseline.subprocess.run")
     def test_docker_digest_is_subprocess_mocked(self, command):
         command.side_effect = [mock.Mock(stdout=""), mock.Mock(stdout="repo@sha256:abc\n")]
         self.assertEqual("repo@sha256:abc", baseline.docker_digest("repo:1"))
         self.assertEqual((("docker", "pull", "repo:1"),), command.call_args_list[0].args)
+
+    @mock.patch("security_baseline.run")
+    def test_scan_uses_rootfs_jar_scope(self, command):
+        command.return_value = mock.Mock(returncode=0, stdout=json.dumps([{"successes": 0}]))
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict("os.environ", {"NVD_API_KEY": "test"}):
+            root = Path(temp); source = root / "source"; controls = root / "controls"; output = root / "out"
+            source.mkdir(); controls.mkdir(); output.mkdir()
+            baseline.scan(source, output, controls)
+        commands = [call.args for call in command.call_args_list]
+        self.assertTrue(any("rootfs" in args and "--pkg-types" in args and "library" in args for args in commands))
 
     def test_valid_zero_findings_are_not_failures(self):
         with tempfile.TemporaryDirectory() as temp:

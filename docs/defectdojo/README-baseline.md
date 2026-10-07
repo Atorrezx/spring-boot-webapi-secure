@@ -31,8 +31,10 @@ auxiliary native evidence, not converted substitutes.
 Maven builds an ephemeral archive with `pom.scan.xml`; the original POM and
 source checkout are never edited. The overlay replaces any embedded NVD key with
 `${env.NVD_API_KEY}` and receives the Actions secret only inside Maven Docker.
-Trivy scans compiled application artifacts and dependency libraries, not the
-original Docker image, OS packages, or `libpng`. Semgrep freezes the community
+Dependency-Check uses NVD with OSS Index disabled in both snapshots, matching
+the corrected snapshot's policy. Scanner execution errors remain fatal.
+Trivy uses `rootfs` on the compiled application JAR directory with library
+packages only. It does not scan the original Docker image, OS packages, or `libpng`. Semgrep freezes the community
 Java rules and the after-revision local rule once, then reuses them for both
 archives. Conftest evaluates the unchanged Dockerfile policy; a valid zero
 failure result does not prove build success.

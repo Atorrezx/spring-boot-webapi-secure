@@ -60,16 +60,16 @@ def scan_pom(source, refresh_db=False):
             version.text = pins[name]
         if name == "dependency-check-maven":
             for item in list(config):
-                if item.tag.rsplit("}", 1)[-1] in {"nvdApiKey", "autoUpdate", "failBuildOnCVSS", "failOnError", "skipTestScope", "formats"}:
+                if item.tag.rsplit("}", 1)[-1] in {"nvdApiKey", "autoUpdate", "failBuildOnCVSS", "failOnError", "skipTestScope", "ossindexAnalyzerEnabled", "formats"}:
                     config.remove(item)
             for tag, value in (("nvdApiKey", "${env.NVD_API_KEY}"), ("autoUpdate", str(bool(refresh_db)).lower()),
-                               ("failBuildOnCVSS", "11"), ("failOnError", "true"), ("skipTestScope", "true")):
+                               ("failBuildOnCVSS", "11"), ("failOnError", "true"), ("skipTestScope", "true"), ("ossindexAnalyzerEnabled", "false")):
                 ET.SubElement(config, "{%s}%s" % (ns["m"], tag)).text = value
             formats = ET.SubElement(config, "{%s}formats" % ns["m"])
             for value in ("HTML", "JSON", "XML", "SARIF"):
                 ET.SubElement(formats, "{%s}format" % ns["m"]).text = value
         if name == "spotbugs-maven-plugin":
-            for tag, value in (("xmlOutput", "true"), ("sarifOutput", "true"), ("sarifOutputFilename", "spotbugs-report.json")):
+            for tag, value in (("xmlOutput", "true"), ("sarifOutput", "true"), ("sarifOutputFilename", "spotbugs-report.json"), ("failOnError", "true")):
                 item = config.find("m:" + tag, ns)
                 if item is None: item = ET.SubElement(config, "{%s}%s" % (ns["m"], tag))
                 item.text = value
@@ -159,7 +159,7 @@ def scan(source, output, controls, refresh_db=False):
         candidate = source / "target" / source_name
         if candidate.exists(): shutil.copy2(candidate, output / target_name)
     docker(SEMGREP, "semgrep", "scan", "--config", "/controls/java.yml", "--config", "/controls/.semgrep.yml", "--metrics=off", "--json-output", "/src/semgrep-results.json", "/src/src/main/java")
-    docker(TRIVY, "fs", "--scanners", "vuln", "--pkg-types", "library", "--list-all-pkgs", "--format", "json", "--output", "trivy-report.json", "--skip-db-update", "--skip-java-db-update", "target")
+    docker(TRIVY, "rootfs", "--scanners", "vuln", "--pkg-types", "library", "--list-all-pkgs", "--format", "json", "--output", "trivy-report.json", "--skip-db-update", "--skip-java-db-update", "target")
     conftest = docker(CONFTEST, "test", "--policy", "/controls/policies/dockerfile.rego", "--output", "json", "/src/Dockerfile", allowed=(0, 1), capture=True)
     (output / "conftest-report.json").write_text(conftest.stdout)
     if conftest.returncode == 1:
@@ -181,7 +181,7 @@ def scan(source, output, controls, refresh_db=False):
 def manifest(output, revision, images, controls, source=None, tree=None):
     counts = validate(output)
     data = {"revision": revision, "tree": tree, "created_at": datetime.now(timezone.utc).isoformat(),
-            "scope": "filesystem compiled application JAR and library packages only",
+            "scope": "rootfs scan of compiled application JAR directory; library packages only, no image or OS packages",
             "source_pom_sha256": sha256(Path(source) / "pom.xml") if source else None,
             "images": images, "controls": {name: sha256(file) for name, file in controls.items()},
             "reports": {name: sha256(output / name) for name in sorted(REPORTS)}, "db_metadata": json.loads((output / "db-metadata.json").read_text()), "process_statuses": json.loads((output / "process-status.json").read_text()), "counts": counts}
