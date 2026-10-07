@@ -1,0 +1,86 @@
+name: Paired security baseline
+
+on:
+  push:
+    branches: [ci/paired-security-baseline]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paired-filesystem-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      BEFORE: 584fd8d9b9ce6d1ac4ef6d41cfbabc0f0f7ae3dc
+      AFTER: df8e9e38f0ca890be73748024e12b22173968264
+      MAVEN: maven:3.9-eclipse-temurin-21
+      SEMGREP: semgrep/semgrep:1.178.0
+      CONFTEST: openpolicyagent/conftest:v0.57.0
+      TRIVY: aquasec/trivy:0.70.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: dc-data-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: dc-data-${{ runner.os }}-
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: trivy-db-${{ runner.os }}-
+      - name: Freeze controls and image identities
+        run: |
+          set -eu
+          mkdir -p .baseline/controls .baseline/out
+          git archive "$AFTER" .semgrep.yml policies/dockerfile.rego Dockerfile | tar -x -C .baseline/controls
+          for image in "$MAVEN" "$SEMGREP" "$CONFTEST" "$TRIVY"; do
+            docker pull "$image" >/dev/null
+            printf '%s=%s\n' "$image" "$(docker image inspect --format='{{index .RepoDigests 0}}' "$image")" >> .baseline/images
+          done
+          test "$(docker image inspect --format='{{json .Config.Entrypoint}}' "$SEMGREP")" = null
+          docker run --rm --pull=never "$SEMGREP" semgrep --version
+          docker run --rm --pull=never --entrypoint python -v "$PWD/.baseline/controls":/controls "$SEMGREP" -c 'from urllib.request import urlretrieve; urlretrieve("https://semgrep.dev/c/p/java", "/controls/java.yml")' > /dev/null
+          docker run --rm --pull=never -v "$PWD/.baseline/controls":/controls "$SEMGREP" semgrep --config /controls/java.yml --validate
+          docker run --rm --pull=never "$TRIVY" --help
+      - name: Scan fixed revisions without changing the checkout
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          set -eu
+          if [ -z "${NVD_API_KEY:-}" ]; then echo 'NVD_API_KEY is required' >&2; exit 1; fi
+          status=0
+          for revision in "$BEFORE" "$AFTER"; do
+            source=.baseline/source-$revision; output=.baseline/out/$revision
+            mkdir -p "$source" "$output"
+            git archive "$revision" | tar -x -C "$source"
+            if [ "$revision" = "$BEFORE" ]; then
+              python3 scripts/security_baseline.py overlay "$source" --refresh-db >/dev/null
+              python3 scripts/security_baseline.py scan "$source" "$output" --controls .baseline/controls --refresh-db || status=1
+            else
+              python3 scripts/security_baseline.py overlay "$source" >/dev/null
+              python3 scripts/security_baseline.py scan "$source" "$output" --controls .baseline/controls || status=1
+            fi
+            python3 scripts/security_baseline.py validate "$output" || status=1
+            python3 scripts/security_baseline.py manifest "$output" "$revision" --source "$source" --tree "$(git rev-parse "$revision^{tree}")" --images-file .baseline/images --control semgrep=.baseline/controls/.semgrep.yml --control java=.baseline/controls/java.yml --control conftest=.baseline/controls/policies/dockerfile.rego || status=1
+          done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paired-before-584fd8d
+          path: .baseline/out/584fd8d9b9ce6d1ac4ef6d41cfbabc0f0f7ae3dc
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paired-after-df8e9e38
+          path: .baseline/out/df8e9e38f0ca890be73748024e12b22173968264
+          if-no-files-found: error
+          retention-days: 14
