@@ -46,7 +46,7 @@ jobs:
           test "$(docker image inspect --format='{{json .Config.Entrypoint}}' "$SEMGREP")" = null
           docker run --rm --pull=never "$SEMGREP" semgrep --version
           docker run --rm --pull=never --entrypoint python -v "$PWD/.baseline/controls":/controls "$SEMGREP" -c 'from urllib.request import urlretrieve; urlretrieve("https://semgrep.dev/c/p/java", "/controls/java.yml")' > /dev/null
-          docker run --rm --pull=never -v "$PWD/.baseline/controls":/controls "$SEMGREP" semgrep --config /controls/java.yml --validate
+          docker run --rm --pull=never -v "$PWD/.baseline/controls":/controls:ro -v "$PWD/.baseline/controls":/src:ro "$SEMGREP" semgrep --config /controls/java.yml --validate --metrics=off
           docker run --rm --pull=never "$TRIVY" --help
       - name: Scan fixed revisions without changing the checkout
         env:
