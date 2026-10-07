@@ -104,6 +104,7 @@
                     <formats>
                         <format>HTML</format>
                         <format>JSON</format>
+                        <format>SARIF</format>
                     </formats>
                 </configuration>
             </plugin>

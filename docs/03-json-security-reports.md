@@ -8,9 +8,23 @@ The CI/CD workflow publishes native scanner output so a failed security control 
 |---|---|---|
 | `semgrep-reports` | `semgrep-results.json`, `semgrep-results.sarif` | The existing Semgrep job always uploads it. `scripts/quality_gate.py` continues to consume `semgrep-results.json`. |
 | `spotbugs-report` | `spotbugsXml.xml`, `spotbugs-report.json` | All three workflows always upload both native SpotBugs reports. The JSON file is native SARIF 2.1.0 output; `scripts/quality_gate.py` continues to consume the XML report. |
-| `dependency-check-report` | `dependency-check-report.html`, `dependency-check-report.json` | The nightly and CI/CD OWASP Dependency-Check jobs always upload native HTML and JSON output. CI/CD's quality gate consumes the JSON report using the existing critical threshold. |
+| `dependency-check-report` | `dependency-check-report.html`, `dependency-check-report.json`, `dependency-check-report.sarif` | The nightly and CI/CD OWASP Dependency-Check jobs always upload native HTML, JSON, and SARIF output. CI/CD's quality gate still consumes the JSON report using the existing critical threshold. |
 | `trivy-reports` | `trivy-report.json`, `trivy-results.sarif` | The Docker scan always uploads both files, including after the CRITICAL/HIGH SARIF gate fails. |
 | `conftest-report` | `conftest-report.json` | The Dockerfile policy job always attempts evaluation and uploads its native JSON output when Conftest produced it. |
+
+## DefectDojo import mapping
+
+| Native file | Artifact | DefectDojo `scan_type` |
+|---|---|---|
+| `dependency-check-report.sarif` | `dependency-check-report` | `SARIF` |
+| `spotbugs-report.json` | `spotbugs-report` | `SARIF` |
+| `semgrep-results.json` | `semgrep-reports` | `Semgrep JSON Report` |
+| `trivy-report.json` | `trivy-reports` | `Trivy Scan` |
+| `conftest-report.json` | `conftest-report` | `Conftest Scan` |
+
+SARIF is JSON. DefectDojo's specific [Dependency Check parser](https://docs.defectdojo.com/supported_tools/parsers/file/dependency_check/) accepts XML only, so Dependency-Check uses its native SARIF report with the [SARIF parser](https://docs.defectdojo.com/supported_tools/parsers/file/sarif/) instead. The original Dependency-Check JSON gate remains unchanged. Conftest successes are not DefectDojo findings. The installed DefectDojo version must expose these parsers; no actual DefectDojo import was tested.
+
+Dependency-Check `11.1.1` supports `SARIF` and the default `dependency-check-report.sarif` filename in its pinned [ReportGenerator source](https://raw.githubusercontent.com/dependency-check/DependencyCheck/v11.1.1/core/src/main/java/org/owasp/dependencycheck/reporting/ReportGenerator.java) and [SARIF template](https://raw.githubusercontent.com/dependency-check/DependencyCheck/v11.1.1/core/src/main/resources/templates/sarifReport.vsl). See the current official [Semgrep](https://docs.defectdojo.com/supported_tools/parsers/file/semgrep/), [Trivy](https://docs.defectdojo.com/supported_tools/parsers/file/trivy/), and [Conftest](https://docs.defectdojo.com/supported_tools/parsers/file/conftest/) parser documentation for the remaining scan types.
 
 ## CI/CD behavior
 

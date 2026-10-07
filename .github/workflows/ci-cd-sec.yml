@@ -186,6 +186,7 @@ jobs:
           path: |
             target/dependency-check-report.html
             target/dependency-check-report.json
+            target/dependency-check-report.sarif
           if-no-files-found: warn
           retention-days: 14
 
