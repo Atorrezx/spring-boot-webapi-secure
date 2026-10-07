@@ -7,6 +7,8 @@ The CI/CD workflow publishes native scanner output so a failed security control 
 | Artifact name | Files | When available |
 |---|---|---|
 | `semgrep-reports` | `semgrep-results.json`, `semgrep-results.sarif` | The existing Semgrep job always uploads it. `scripts/quality_gate.py` continues to consume `semgrep-results.json`. |
+| `spotbugs-report` | `spotbugsXml.xml`, `spotbugs-report.json` | All three workflows always upload both native SpotBugs reports. The JSON file is native SARIF 2.1.0 output; `scripts/quality_gate.py` continues to consume the XML report. |
+| `dependency-check-report` | `dependency-check-report.html`, `dependency-check-report.json` | The nightly and CI/CD OWASP Dependency-Check jobs always upload native HTML and JSON output. CI/CD's quality gate consumes the JSON report using the existing critical threshold. |
 | `trivy-reports` | `trivy-report.json`, `trivy-results.sarif` | The Docker scan always uploads both files, including after the CRITICAL/HIGH SARIF gate fails. |
 | `conftest-report` | `conftest-report.json` | The Dockerfile policy job always attempts evaluation and uploads its native JSON output when Conftest produced it. |
 
